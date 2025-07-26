@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Brainstorming Board</title>
+    <style>
+        /* ----- BASE STYLES ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Kanit', sans-serif;
+        }
+        
+        body {
+            overflow: hidden;
+            background-color: #f7f7f7;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* ----- TOOLBAR ----- */
+        .toolbar {
+            width: 80px;
+            height: 100%;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .tool {
+            width: 50px;
+            height: 50px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .tool:hover {
+            background-color: #34495e;
+        }
+        
+        .tool-active {
+            background-color: #3498db;
+        }
+        
+        .tool svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .tool-color-picker {
+            display: flex;
+            flex-wrap: wrap;
+            width: 60px;
+            margin: 5px 0;
+            justify-content: center;
+        }
+        
+        .color-option {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin: 2px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        /* ----- MAIN CANVAS ----- */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #main-canvas {
+            width: 3000px;
+            height: 3000px;
+            background-color: #ecf0f1;
+            background-image: 
+                linear-gradient(rgba(150, 150, 150, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(150, 150, 150, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transform-origin: 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: grab;
+        }
+        
+        #main-canvas.drawing {
+            cursor: crosshair;
+        }
+        
+        #main-canvas.adding-note {
+            cursor: cell;
+        }
+        
+        /* ----- STICKY NOTES ----- */
+        .sticky-note {
+            position: absolute;
+            min-width: 150px;
+            min-height: 150px;
+            background-color: #f7fa96;
+            padding: 15px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+            cursor: move;
+            border-radius: 2px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sticky-note-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        
+        .sticky-note-content {
+            flex: 1;
+            outline: none;
+            background: transparent;
+            border: none;
+            resize: none;
+            font-size: 14px;
+            overflow-y: auto;
+        }
+        
+        .note-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .note-action {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .note-action:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+        
+        /* ----- COLLABORATION PANEL ----- */
+        .collaboration-panel {
+            width: 280px;
+            height: 100%;
+            background-color: white;
+            border-left: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .panel-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .panel-tab.active {
+            border-bottom: 3px solid #3498db;
+            color: #3498db;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .users-list {
+            list-style: none;
+        }
+        
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 5px;
+            border-radius: 5px;
+        }
+        
+        .user-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .message-bubble {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 90%;
+            word-wrap: break-word;
+        }
+        
+        .message-mine .message-bubble {
+            background-color: #d1ecf1;
+            margin-left: auto;
+        }
+        
+        .chat-input {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .chat-input textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            resize: none;
+            height: 60px;
+        }
+        
+        .chat-input button {
+            width: 100%;
+            padding: 8px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        
+        /* ----- CONTROLS ----- */
+        .canvas-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            background-color: white;
+            border-radius: 30px;
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .control-btn:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .zoom-level {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-weight: 500;
+        }
+        
+        /* ----- CONTEXT MENU ----- */
+        .context-menu {
+            position: absolute;
+            width: 150px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 5px 0;
+            z-index: 100;
+            display: none;
+        }
+        
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* ----- COMMENT SYSTEM ----- */
+        .comment-thread {
+            position: absolute;
+            width: 250px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+            display: none;
+        }
+        
+        .comment-header {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comment-close {
+            cursor: pointer;
+        }
+        
+        .comments-list {
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .comment {
+            margin-bottom: 12px;
+        }
+        
+        .comment-bubble {
+            background-color: #f7f7f7;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        
+        .comment-author {
+            font-weight: 500;
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+        
+        .comment-input {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .comment-input textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: none;
+            height: 60px;
+            font-size: 13px;
+        }
+        
+        .comment-input button {
+            width: 100%;
+            padding: 6px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-top: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* ----- SHAPE ELEMENTS ----- */
+        .shape {
+            position: absolute;
+            z-index: 5;
+        }
+        
+        .shape.selected {
+            outline: 2px dashed #3498db;
+        }
+
+        /* ----- DRAWING ELEMENTS ----- */
+        svg.drawing {
+            position: absolute;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* ----- CURSOR INDICATORS ----- */
+        .user-cursor {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .user-cursor .cursor-pointer {
+            width: 20px;
+            height: 20px;
+            transform: rotate(-45deg);
+        }
+        
+        .user-cursor .cursor-label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* ----- LOAD ANIMATION ----- */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #3498db;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ----- GROUPING ----- */
+        .group-container {
+            position: absolute;
+            border: 2px dashed #3498db;
+            background-color: rgba(52, 152, 219, 0.05);
+            border-radius: 5px;
+            z-index: 1;
+        }
+        
+        .group-title {
+            position: absolute;
+            top: -25px;
+            left: 10px;
+            background-color: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen">
+        <div class="loader"></div>
+        <h3>กำลังโหลดกระดานระดมความคิด...</h3>
+    </div>
+
+    <div class="container">
+        <!-- Left Toolbar -->
+        <div class="toolbar">
+            <div class="tool tool-active" id="select-tool" title="เลือก">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7,2l12,11.2l-5.8,0.5l3.3,7.3l-2.2,1l-3.2-7.4L7,18.5V2"/>
+                </svg>
+            </div>
+            <div class="tool" id="sticky-tool" title="โน้ต">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21,2H3C1.9,2,1,2.9,1,4v16c0,1.1,0.9,2,2,2h18c1.1,0,2-0.9,2-2V4C23,2.9,22.1,2,21,2z M21,20H3V4h18V20z M5,6h14v2H5V6z M5,10h14v2H5V10z M5,14h10v2H5V14z"/>
+                </svg>
+            </div>
+            <div class="tool" id="text-tool" title="ข้อความ">
+                <svg viewBox="0 0 24 24">
+                    <path d="M5,8h14V6H5V8z M5,18h14v-2H5V18z M5,13h14v-2H5V13z"/>
+                </svg>
+            </div>
+            <div class="tool" id="draw-tool" title="วาด">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20.71,4.04C21.1,3.65 21.1,3 20.71,2.63L18.37,0.29C18,-0.1 17.35,-0.1 16.96,0.29L15,2.25L18.75,6L20.71,4.04z M17.75,7L14,3.25L4,13.25V17H7.75L17.75,7z"/>
+                </svg>
+            </div>
+            <div class="tool" id="shape-tool" title="รูปร่าง">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4,8h4V4H4V8z M10,20h4v-4h-4V20z M4,20h4v-4H4V20z M4,14h4v-4H4V14z M10,14h4v-4h-4V14z M16,4v4h4V4H16z M10,8h4V4h-4V8z M16,14h4v-4h-4V14z M16,20h4v-4h-4V20z"/>
+                </svg>
+            </div>
+            <div class="tool" id="upload-tool" title="อัพโหลดรูป">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19,5v14H5V5H19 M21,3H3v18h18V3L21,3z M13.96,12.29l-2.75,3.54l-1.96-2.36L6.5,17h11L13.96,12.29z"/>
+                </svg>
+            </div>
+            <div class="tool" id="group-tool" title="จัดกลุ่ม">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3,3h6v6H3V3z M15,3h6v6h-6V3z M9,3h6v6H9V3z M3,9h6v6H3V9z M9,9h6v6H9V9z M15,9h6v6h-6V9z M3,15h6v6H3V15z M9,15h6v6H9V15z M15,15h6v6h-6V15z"/>
+                </svg>
+            </div>
+            <div class="tool-color-picker">
+                <div class="color-option" style="background-color: #f7fa96;" data-color="#f7fa96"></div>
+                <div class="color-option" style="background-color: #fcbad3;" data-color="#fcbad3"></div>
+                <div class="color-option" style="background-color: #a1eafb;" data-color="#a1eafb"></div>
+                <div class="color-option" style="background-color: #a6f69b;" data-color="#a6f69b"></div>
+                <div class="color-option" style="background-color: #ffb38a;" data-color="#ffb38a"></div>
+                <div class="color-option" style="background-color: #f5f5f5;" data-color="#f5f5f5"></div>
+            </div>
+        </div>
+        
+        <!-- Main Canvas Area -->
+        <div class="canvas-container">
+            <div id="main-canvas">
+                <!-- Canvas content will be generated here -->
+            </div>
+            
+            <!-- Canvas Controls -->
+            <div class="canvas-controls">
+                <div class="control-btn" id="zoom-out">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/>
+                    </svg>
+                </div>
+                <div class="zoom-level">100%</div>
+                <div class="control-btn" id="zoom-in">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM9 7h1v1H9v1H8V9H7V8h1V7zm0 0h1v1H9v1H8V9H7V8h1V7z"/>
+                    </svg>
+                </div>
+                <div class="control-btn" id="center-canvas">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14l-6-6z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel for Collaboration -->
+        <div class="collaboration-panel">
+            <div class="panel-tabs">
+                <div class="panel-tab active" data-tab="chat">แชท</div>
+                <div class="panel-tab" data-tab="users">ผู้ใช้งาน</div>
+            </div>
+            
+            <div class="panel-content">
+                <!-- Chat Tab -->
+                <div class="tab-content active" id="chat-tab">
+                    <div class="chat-container">
+                        <div class="chat-messages">
+                            <div class="message">
+                                <div class="message-header">
+                                    <div class="user-avatar" style="background-color: #3498db;">S</div>
+                                    <strong>ระบบ</strong>
+                                </div>
+                                <div class="message-bubble">
+                                    ยินดีต้อนรับสู่กระดานระดมความคิด! เชิญทุกคนแชร์ไอเดียได้อย่างอิสระ
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input">
+                            <textarea placeholder="พิมพ์ข้อความ..."></textarea>
+                            <button>ส่ง</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Tab -->
+                <div class="tab-content" id="users-tab" style="display: none;">
+                    <ul class="users-list">
+                        <li class="user-item">
+                            <div class="user-avatar" style="background-color: #e74c3c;">U</div>
+                            <span>คุณ (กำลังออนไลน์)</span>
+                        </li>
+                        <li class="user-item">
+                            <div class="user-avatar" style="background-color: #2ecc71;">S</div>
+                            <span>สมชาย</span>
+                        </li>
+                        <li class="user-item">
+                            <div class="user-avatar" style="background-color: #f39c12;">M</div>
+                            <span>มานี</span>
+                        </li>
+                        <li class="user-item">
+                            <div class="user-avatar" style="background-color: #9b59b6;">P</div>
+                            <span>ปิติ</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" id="edit-item">แก้ไข</div>
+        <div class="context-menu-item" id="delete-item">ลบ</div>
+        <div class="context-menu-item" id="comment-item">เพิ่มความคิดเห็น</div>
+        <div class="context-menu-item" id="change-color">เปลี่ยนสี</div>
+    </div>
+    
+    <!-- Comment Thread -->
+    <div class="comment-thread" id="comment-thread">
+        <div class="comment-header">
+            <h3>ความคิดเห็น</h3>
+            <div class="comment-close">✕</div>
+        </div>
+        <div class="comments-list">
+            <!-- Comments will be added here -->
+        </div>
+        <div class="comment-input">
+            <textarea placeholder="เพิ่มความคิดเห็น..."></textarea>
+            <button>ส่ง</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ----- INITIALIZATION -----
+            setTimeout(() => {
+                document.querySelector('.loading-screen').style.display = 'none';
+            }, 1000);
+            
+            // ----- VARIABLES -----
+            const canvas = document.getElementById('main-canvas');
+            const tools = document.querySelectorAll('.tool');
+            const colorOptions = document.querySelectorAll('.color-option');
+            let currentTool = 'select';
+            let currentColor = '#f7fa96';
+            let scale = 1;
+            let dragActive = false;
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let offsetX = 0;
+            let offsetY = 0;
+            let drawingActive = false;
+            let currentPath = null;
+            let noteIdCounter = 1;
+            let selectedElements = [];
+            let activeTextarea = null;
+            let pathPoints = [];
+            let resizing = false;
+            let resizeStartX = 0;
+            let resizeStartY = 0;
+            let resizeElement = null;
+            let resizeInitialWidth = 0;
+            let resizeInitialHeight = 0;
+            let groupSelectionActive = false;
+            let groupStartX = 0;
+            let groupStartY = 0;
+            let groupRect = null;
+            let commentTarget = null;
+            
+            // ----- CANVAS TRANSFORMATION -----
+            // Initialize canvas position to center
+            centerCanvas();
+            
+            function updateCanvasTransform() {
+                canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                document.querySelector('.zoom-level').innerText = `${Math.round(scale * 100)}%`;
+            }
+            
+            function centerCanvas() {
+                const canvasContainer = document.querySelector('.canvas-container');
+                offsetX = (canvasContainer.offsetWidth - 3000) / 2;
+                offsetY = (canvasContainer.offsetHeight - 3000) / 2;
+                updateCanvasTransform();
+            }
+            
+            // ----- TOOLBAR INTERACTIONS -----
+            tools.forEach(tool => {
+                tool.addEventListener('click', () => {
+                    tools.forEach(t => t.classList.remove('tool-active'));
+                    tool.classList.add('tool-active');
+                    
+                    // Set current tool based on id
+                    currentTool = tool.id.split('-')[0];
+                    
+                    // Update cursor and classes
+                    canvas.classList.remove('adding-note', 'drawing');
+                    if (currentTool === 'sticky') {
+                        canvas.classList.add('adding-note');
+                    } else if (currentTool === 'draw') {
+                        canvas.classList.add('drawing');
+                    }
+                    
+                    // Clear any selections
+                    clearSelection();
+                });
+            });
+            
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    currentColor = option.getAttribute('data-color');
+                    colorOptions.forEach(o => o.style.border = '1px solid rgba(255,255,255,0.3)');
+                    option.style.border = '2px solid white';
+                });
+            });
+            
+            // Select the default color
+            document.querySelector('.color-option[data-color="#f7fa96"]').style.border = '2px solid white';
+            
+            // ----- CANVAS CONTROLS -----
+            document.getElementById('zoom-in').addEventListener('click', () => {
+                if (scale < 3) {
+                    scale += 0.1;
+                    updateCanvasTransform();
+                }
+            });
+            
+            document.getElementById('zoom-out').addEventListener('click', () => {
+                if (scale > 0.3) {
+                    scale -= 0.1;
+                    updateCanvasTransform();
+                }
+            });
+            
+            document.getElementById('center-canvas').addEventListener('click', centerCanvas);
+            
+            // ----- CANVAS INTERACTIONS -----
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            document.addEventListener('mouseup', handleCanvasMouseUp);
+            
+            function handleCanvasMouseDown(e) {
+                // Ignore if right click
+                if (e.button === 2) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale;
+                const y = (e.clientY - rect.top) / scale;
+                
+                if (currentTool === 'select') {
+                    // Check if clicked on a sticky note or shape
+                    const target = e.target;
+                    const clickedOnElement = target.closest('.sticky-note') || target.closest('.shape');
+                    
+                    if (clickedOnElement) {
+                        // If clicked on a sticky note content, let it handle the edit
+                        if (target.classList.contains('sticky-note-content')) {
+                            return;
+                        }
+                        
+                        // Handle selection and dragging
+                        clearSelection();
+                        selectedElements = [clickedOnElement];
+                        clickedOnElement.classList.add('selected');
+                        
+                        // Prepare for dragging
+                        dragActive = true;
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                    } else {
+                        // Start group selection
+                        clearSelection();
+                        groupSelectionActive = true;
+                        groupStartX = x;
+                        groupStartY = y;
+                        
+                        // Create selection rectangle
+                        groupRect = document.createElement('div');
+                        groupRect.style.position = 'absolute';
+                        groupRect.style.border = '1px dashed #3498db';
+                        groupRect.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+                        groupRect.style.left = `${x}px`;
+                        groupRect.style.top = `${y}px`;
+                        groupRect.style.width = '0';
+                        groupRect.style.height = '0';
+                        groupRect.style.zIndex = '50';
+                        canvas.appendChild(groupRect);
+                    }
+                } else if (currentTool === 'sticky') {
+                    // Create a new sticky note
+                    createStickyNote(x, y);
+                    // Switch back to select tool
+                    document.getElementById('select-tool').click();
+                } else if (currentTool === 'draw') {
+                    // Start drawing
+                    drawingActive = true;
+                    pathPoints = [];
+                    pathPoints.push({x, y});
+                    
+                    // Create SVG for drawing
+                    const svgNS = "http://www.w3.org/2000/svg";
+                    const svg = document.createElementNS(svgNS, "svg");
+                    svg.setAttribute("class", "drawing");
+                    svg.setAttribute("width", "100%");
+                    svg.setAttribute("height", "100%");
+                    svg.style.left = '0';
+                    svg.style.top = '0';
+                    
+                    // Create path element
+                    currentPath = document.createElementNS(svgNS, "path");
+                    currentPath.setAttribute("d", `M${x},${y}`);
+                    currentPath.setAttribute("stroke", "#2c3e50");
+                    currentPath.setAttribute("stroke-width", "2");
+                    currentPath.setAttribute("fill", "none");
+                    
+                    svg.appendChild(currentPath);
+                    canvas.appendChild(svg);
+                } else if (currentTool === 'shape') {
+                    // Create a shape (rectangle for simplicity)
+                    const shape = document.createElement('div');
+                    shape.className = 'shape';
+                    shape.style.left = `${x}px`;
+                    shape.style.top = `${y}px`;
+                    shape.style.width = '100px';
+                    shape.style.height = '100px';
+                    shape.style.backgroundColor = currentColor;
+                    shape.style.border = '1px solid rgba(0,0,0,0.1)';
+                    
+                    canvas.appendChild(shape);
+                    
+                    // Switch back to select tool
+                    document.getElementById('select-tool').click();
+                } else if (currentTool === 'text') {
+                    // Create a text element
+                    const textElement = document.createElement('div');
+                    textElement.className = 'sticky-note';
+                    textElement.style.minHeight = '40px';
+                    textElement.style.backgroundColor = 'transparent';
+                    textElement.style.boxShadow = 'none';
+                    textElement.style.left = `${x}px`;
+                    textElement.style.top = `${y}px`;
+                    
+                    const textContent = document.createElement('div');
+                    textContent.className = 'sticky-note-content';
+                    textContent.contentEditable = true;
+                    textContent.innerText = 'คลิกเพื่อพิมพ์...';
+                    
+                    textElement.appendChild(textContent);
+                    canvas.appendChild(textElement);
+                    
+                    // Focus on the text
+                    setTimeout(() => {
+                        textContent.focus();
+                        document.execCommand('selectAll', false, null);
+                    }, 0);
+                    
+                    // Switch back to select tool
+                    document.getElementById('select-tool').click();
+                } else if (currentTool === 'pan') {
+                    // Handle canvas panning
+                    dragActive = true;
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                }
+            }
+            
+            function handleCanvasMouseMove(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale;
+                const y = (e.clientY - rect.top) / scale;
+                
+                // Update user cursor position (for multi-user collaboration)
+                updateUserCursor(x, y);
+                
+                if (dragActive && currentTool === 'select' && selectedElements.length > 0) {
+                    // Move selected elements
+                    const deltaX = (e.clientX - dragStartX) / scale;
+                    const deltaY = (e.clientY - dragStartY) / scale;
+                    
+                    selectedElements.forEach(element => {
+                        const currentLeft = parseFloat(element.style.left) || 0;
+                        const currentTop = parseFloat(element.style.top) || 0;
+                        
+                        element.style.left = `${currentLeft + deltaX}px`;
+                        element.style.top = `${currentTop + deltaY}px`;
+                    });
+                    
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                } else if (drawingActive && currentTool === 'draw') {
+                    // Continue drawing
+                    pathPoints.push({x, y});
+                    
+                    // Update path
+                    let pathData = `M${pathPoints[0].x},${pathPoints[0].y}`;
+                    for (let i = 1; i < pathPoints.length; i++) {
+                        pathData += ` L${pathPoints[i].x},${pathPoints[i].y}`;
+                    }
+                    
+                    currentPath.setAttribute("d", pathData);
+                } else if (dragActive && (currentTool === 'pan' || currentTool === 'select' && selectedElements.length === 0)) {
+                    // Pan the canvas
+                    offsetX += e.clientX - dragStartX;
+                    offsetY += e.clientY - dragStartY;
+                    updateCanvasTransform();
+                    
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                } else if (groupSelectionActive) {
+                    // Update selection rectangle
+                    const width = x - groupStartX;
+                    const height = y - groupStartY;
+                    
+                    let rectLeft = groupStartX;
+                    let rectTop = groupStartY;
+                    
+                    if (width < 0) {
+                        rectLeft = x;
+                    }
+                    
+                    if (height < 0) {
+                        rectTop = y;
+                    }
+                    
+                    groupRect.style.left = `${rectLeft}px`;
+                    groupRect.style.top = `${rectTop}px`;
+                    groupRect.style.width = `${Math.abs(width)}px`;
+                    groupRect.style.height = `${Math.abs(height)}px`;
+                }
+            }
+            
+            function handleCanvasMouseUp(e) {
+                if (groupSelectionActive) {
+                    // Select elements within the selection rectangle
+                    const rectLeft = parseFloat(groupRect.style.left);
+                    const rectTop = parseFloat(groupRect.style.top);
+                    const rectRight = rectLeft + parseFloat(groupRect.style.width);
+                    const rectBottom = rectTop + parseFloat(groupRect.style.height);
+                    
+                    const elements = document.querySelectorAll('.sticky-note, .shape');
+                    selectedElements = [];
+                    
+                    elements.forEach(element => {
+                        const elemLeft = parseFloat(element.style.left);
+                        const elemTop = parseFloat(element.style.top);
+                        const elemRight = elemLeft + element.offsetWidth;
+                        const elemBottom = elemTop + element.offsetHeight;
+                        
+                        // Check if element is within selection rectangle
+                        if (elemLeft < rectRight && elemRight > rectLeft &&
+                            elemTop < rectBottom && elemBottom > rectTop) {
+                            selectedElements.push(element);
+                            element.classList.add('selected');
+                        }
+                    });
+                    
+                    // Remove selection rectangle
+                    canvas.removeChild(groupRect);
+                    groupSelectionActive = false;
+                }
+                
+                if (drawingActive) {
+                    drawingActive = false;
+                    currentPath = null;
+                }
+                
+                dragActive = false;
+                resizing = false;
+            }
+            
+            function updateUserCursor(x, y) {
+                // For local user, we would normally broadcast this to others in a real app
+                // In a real implementation, this would be synced with other users
+                let cursor = document.getElementById('user-cursor');
+                
+                if (!cursor) {
+                    cursor = document.createElement('div');
+                    cursor.id = 'user-cursor';
+                    cursor.className = 'user-cursor';
+                    
+                    const pointer = document.createElement('div');
+                    pointer.className = 'cursor-pointer';
+                    pointer.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="100%" height="100%" fill="#e74c3c">
+                            <path d="M7,2l12,11.2l-5.8,0.5l3.3,7.3l-2.2,1l-3.2-7.4L7,18.5V2"/>
+                        </svg>
+                    `;
+                    
+                    const label = document.createElement('div');
+                    label.className = 'cursor-label';
+                    label.innerText = 'คุณ';
+                    
+                    cursor.appendChild(pointer);
+                    cursor.appendChild(label);
+                    
+                    document.body.appendChild(cursor);
+                }
+                
+                // Position the cursor
+                cursor.style.left = `${x * scale + canvas.getBoundingClientRect().left}px`;
+                cursor.style.top = `${y * scale + canvas.getBoundingClientRect().top}px`;
+            }
+            
+            // ----- STICKY NOTES -----
+            function createStickyNote(x, y) {
+                const note = document.createElement('div');
+                note.className = 'sticky-note';
+                note.style.left = `${x}px`;
+                note.style.top = `${y}px`;
+                note.style.backgroundColor = currentColor;
+                note.id = `note-${noteIdCounter++}`;
+                note.dataset.comments = JSON.stringify([]);
+                
+                // Create header with actions
+                const header = document.createElement('div');
+                header.className = 'sticky-note-header';
+                
+                const actions = document.createElement('div');
+                actions.className = 'note-actions';
+                
+                // Comment button
+                const commentBtn = document.createElement('div');
+                commentBtn.className = 'note-action';
+                commentBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M21,6h-2v9H6v2c0,0.6,0.4,1,1,1h11l4,4V7C22,6.4,21.6,6,21,6z M17,12V3c0-0.6-0.4-1-1-1H3C2.4,2,2,2.4,2,3v14l4-4h10C16.6,13,17,12.6,17,12z"/></svg>';
+                commentBtn.title = 'ความคิดเห็น';
+                
+                // Delete button
+                const deleteBtn = document.createElement('div');
+                deleteBtn.className = 'note-action';
+                deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6,19c0,1.1,0.9,2,2,2h8c1.1,0,2-0.9,2-2V7H6V19z M19,4h-3.5l-1-1h-5l-1,1H5v2h14V4z"/></svg>';
+                deleteBtn.title = 'ลบ';
+                
+                actions.appendChild(commentBtn);
+                actions.appendChild(deleteBtn);
+                header.appendChild(actions);
+                
+                // Create content area
+                const content = document.createElement('div');
+                content.className = 'sticky-note-content';
+                content.contentEditable = true;
+                content.innerText = 'พิมพ์โน้ตที่นี่...';
+                
+                note.appendChild(header);
+                note.appendChild(content);
+                
+                // Add event listeners
+                commentBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openCommentThread(note);
+                });
+                
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    note.remove();
+                });
+                
+                content.addEventListener('focus', function() {
+                    if (this.innerText === 'พิมพ์โน้ตที่นี่...') {
+                        this.innerText = '';
+                    }
+                    activeTextarea = this;
+                });
+                
+                content.addEventListener('blur', function() {
+                    if (this.innerText.trim() === '') {
+                        this.innerText = 'พิมพ์โน้ตที่นี่...';
+                    }
+                    activeTextarea = null;
+                });
+                
+                // Add right-click context menu
+                note.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    showContextMenu(e, note);
+                });
+                
+                canvas.appendChild(note);
+                return note;
+            }
+            
+            // ----- CONTEXT MENU -----
+            const contextMenu = document.getElementById('context-menu');
+            
+            function showContextMenu(e, target) {
+                e.preventDefault();
+                
+                // Position context menu
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.top = `${e.clientY}px`;
+                
+                // Set event handlers
+                document.getElementById('edit-item').onclick = () => {
+                    contextMenu.style.display = 'none';
+                    if (target.querySelector('.sticky-note-content')) {
+                        target.querySelector('.sticky-note-content').focus();
+                    }
+                };
+                
+                document.getElementById('delete-item').onclick = () => {
+                    contextMenu.style.display = 'none';
+                    target.remove();
+                };
+                
+                document.getElementById('comment-item').onclick = () => {
+                    contextMenu.style.display = 'none';
+                    openCommentThread(target);
+                };
+                
+                document.getElementById('change-color').onclick = () => {
+                    contextMenu.style.display = 'none';
+                    target.style.backgroundColor = currentColor;
+                };
+                
+                // Close context menu when clicking elsewhere
+                setTimeout(() => {
+                    document.addEventListener('click', hideContextMenu);
+                }, 0);
+            }
+            
+            function hideContextMenu() {
+                contextMenu.style.display = 'none';
+                document.removeEventListener('click', hideContextMenu);
+            }
+            
+            // ----- COMMENT SYSTEM -----
+            const commentThread = document.getElementById('comment-thread');
+            
+            function openCommentThread(target) {
+                commentTarget = target;
+                
+                // Position comment thread next to the target
+                const targetRect = target.getBoundingClientRect();
+                commentThread.style.display = 'block';
+                commentThread.style.left = `${targetRect.right + 10}px`;
+                commentThread.style.top = `${targetRect.top}px`;
+                
+                // Load comments
+                loadComments(target);
+                
+                // Set up close button
+                document.querySelector('.comment-close').onclick = () => {
+                    commentThread.style.display = 'none';
+                };
+                
+                // Set up comment submission
+                const commentInput = document.querySelector('.comment-input textarea');
+                const commentButton = document.querySelector('.comment-input button');
+                
+                commentInput.value = '';
+                commentInput.focus();
+                
+                commentButton.onclick = () => {
+                    if (commentInput.value.trim() !== '') {
+                        addComment(commentInput.value);
+                        commentInput.value = '';
+                    }
+                };
+                
+                commentInput.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        commentButton.click();
+                    }
+                };
+            }
+            
+            function loadComments(target) {
+                const commentsList = document.querySelector('.comments-list');
+                commentsList.innerHTML = '';
+                
+                // Get comments from data attribute
+                let comments = [];
+                try {
+                    comments = JSON.parse(target.dataset.comments || '[]');
+                } catch (e) {
+                    console.error('Error parsing comments:', e);
+                }
+                
+                if (comments.length === 0) {
+                    commentsList.innerHTML = '<div class="no-comments">ยังไม่มีความคิดเห็น</div>';
+                    return;
+                }
+                
+                // Render comments
+                comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.innerHTML = `
+                        <div class="comment-author">${comment.author}</div>
+                        <div class="comment-bubble">${comment.text}</div>
+                    `;
+                    commentsList.appendChild(commentElement);
+                });
+                
+                // Scroll to bottom
+                commentsList.scrollTop = commentsList.scrollHeight;
+            }
+            
+            function addComment(text) {
+                if (!commentTarget) return;
+                
+                // Get existing comments
+                let comments = [];
+                try {
+                    comments = JSON.parse(commentTarget.dataset.comments || '[]');
+                } catch (e) {
+                    console.error('Error parsing comments:', e);
+                }
+                
+                // Add new comment
+                comments.push({
+                    author: 'คุณ',
+                    text: text,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Save comments
+                commentTarget.dataset.comments = JSON.stringify(comments);
+                
+                // Reload comments
+                loadComments(commentTarget);
+            }
+            
+            // ----- PANEL TABS -----
+            const panelTabs = document.querySelectorAll('.panel-tab');
+            
+            panelTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active tab
+                    panelTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabName = tab.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.style.display = 'none';
+                    });
+                    document.getElementById(`${tabName}-tab`).style.display = 'block';
+                });
+            });
+            
+            // ----- CHAT SYSTEM -----
+            const chatInput = document.querySelector('.chat-input textarea');
+            const chatSendButton = document.querySelector('.chat-input button');
+            const chatMessages = document.querySelector('.chat-messages');
+            
+            chatSendButton.addEventListener('click', () => {
+                if (chatInput.value.trim() !== '') {
+                    sendChatMessage(chatInput.value);
+                    chatInput.value = '';
+                }
+            });
+            
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatSendButton.click();
+                }
+            });
+            
+            function sendChatMessage(text) {
+                // Create message element
+                const message = document.createElement('div');
+                message.className = 'message message-mine';
+                message.innerHTML = `
+                    <div class="message-header">
+                        <div class="user-avatar" style="background-color: #e74c3c;">U</div>
+                        <strong>คุณ</strong>
+                    </div>
+                    <div class="message-bubble">${text}</div>
+                `;
+                
+                chatMessages.appendChild(message);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // In a real application, we would send this message to other participants
+                // For this demo, we'll simulate a response
+                setTimeout(() => {
+                    simulateResponse();
+                }, 2000);
+            }
+            
+            function simulateResponse() {
+                const responses = [
+                    'ไอเดียน่าสนใจมากเลย!',
+                    'เราน่าจะลองแนวทางนี้ดู',
+                    'ฉันเห็นด้วยกับความคิดนี้',
+                    'มีประเด็นน่าพิจารณาเพิ่มเติมไหม?',
+                    'เรามาลองระดมความคิดกันต่อในกระดานดีกว่า'
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                const users = [
+                    { name: 'สมชาย', color: '#2ecc71', initial: 'S' },
+                    { name: 'มานี', color: '#f39c12', initial: 'M' },
+                    { name: 'ปิติ', color: '#9b59b6', initial: 'P' }
+                ];
+                
+                const randomUser = users[Math.floor(Math.random() * users.length)];
+                
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.innerHTML = `
+                    <div class="message-header">
+                        <div class="user-avatar" style="background-color: ${randomUser.color};">${randomUser.initial}</div>
+                        <strong>${randomUser.name}</strong>
+                    </div>
+                    <div class="message-bubble">${randomResponse}</div>
+                `;
+                
+                chatMessages.appendChild(message);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // ----- HELPER FUNCTIONS -----
+            function clearSelection() {
+                selectedElements.forEach(element => {
+                    element.classList.remove('selected');
+                });
+                selectedElements = [];
+            }
+            
+            // ----- GROUPING TOOL -----
+            document.getElementById('group-tool').addEventListener('click', () => {
+                if (selectedElements.length > 1) {
+                    // Find bounding box of selected elements
+                    let minLeft = Infinity;
+                    let minTop = Infinity;
+                    let maxRight = -Infinity;
+                    let maxBottom = -Infinity;
+                    
+                    selectedElements.forEach(element => {
+                        const left = parseFloat(element.style.left);
+                        const top = parseFloat(element.style.top);
+                        const right = left + element.offsetWidth;
+                        const bottom = top + element.offsetHeight;
+                        
+                        minLeft = Math.min(minLeft, left);
+                        minTop = Math.min(minTop, top);
+                        maxRight = Math.max(maxRight, right);
+                        maxBottom = Math.max(maxBottom, bottom);
+                    });
+                    
+                    // Create group container
+                    const group = document.createElement('div');
+                    group.className = 'group-container';
+                    group.style.left = `${minLeft - 10}px`;
+                    group.style.top = `${minTop - 10}px`;
+                    group.style.width = `${maxRight - minLeft + 20}px`;
+                    group.style.height = `${maxBottom - minTop + 20}px`;
+                    
+                    // Add title
+                    const title = document.createElement('div');
+                    title.className = 'group-title';
+                    title.contentEditable = true;
+                    title.innerText = 'กลุ่มไอเดีย';
+                    group.appendChild(title);
+                    
+                    canvas.appendChild(group);
+                    
+                    // Reset selection
+                    clearSelection();
+                } else {
+                    alert('กรุณาเลือกไอเดียอย่างน้อย 2 รายการเพื่อจัดกลุ่ม');
+                }
+            });
+            
+            // ----- UPLOAD TOOL -----
+            document.getElementById('upload-tool').addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.className = 'shape';
+                            img.style.position = 'absolute';
+                            img.style.left = '100px';
+                            img.style.top = '100px';
+                            img.style.maxWidth = '300px';
+                            img.style.maxHeight = '300px';
+                            img.style.cursor = 'move';
+                            
+                            canvas.appendChild(img);
+                            
+                            // Switch back to select tool
+                            document.getElementById('select-tool').click();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                
+                input.click();
+            });
+            
+            // ----- INITIALIZE EXAMPLE CONTENT -----
+            // Create some example sticky notes
+            const exampleNotes = [
+                { x: 500, y: 200, color: '#f7fa96', text: 'ไอเดียหลัก: กระดานระดมความคิดเสมือน' },
+                { x: 300, y: 350, color: '#fcbad3', text: 'ความท้าทาย: รองรับการทำงานร่วมกันแบบเรียลไทม์' },
+                { x: 700, y: 350, color: '#a1eafb', text: 'โอกาส: ช่วยให้ทีมทำงานระยะไกลได้อย่างมีประสิทธิภาพ' },
+                { x: 500, y: 500, color: '#a6f69b', text: 'ขั้นตอนถัดไป: สร้างต้นแบบและทดสอบกับผู้ใช้' },
+            ];
+            
+            exampleNotes.forEach(note => {
+                const stickyNote = createStickyNote(note.x, note.y);
+                stickyNote.style.backgroundColor = note.color;
+                stickyNote.querySelector('.sticky-note-content').innerText = note.text;
+            });
+            
+            // Create a group
+            const group = document.createElement('div');
+            group.className = 'group-container';
+            group.style.left = '250px';
+            group.style.top = '150px';
+            group.style.width = '550px';
+            group.style.height = '400px';
+            
+            const title = document.createElement('div');
+            title.className = 'group-title';
+            title.innerText = 'ไอเดียหลัก';
+            group.appendChild(title);
+            
+            canvas.appendChild(group);
+            
+            // Send initial chat message
+            setTimeout(() => {
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.innerHTML = `
+                    <div class="message-header">
+                        <div class="user-avatar" style="background-color: #2ecc71;">S</div>
+                        <strong>สมชาย</strong>
+                    </div>
+                    <div class="message-bubble">ทุกคน ขอเชิญร่วมกันระดมความคิดเกี่ยวกับโครงการใหม่ของเรากันครับ!</div>
+                `;
+                
+                chatMessages.appendChild(message);
+            }, 1500);
+            
+            // Prevent default context menu
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                updateCanvasTransform();
+            });
+        });
+    </script>
+</body>
+</html>
