@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RATbid</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="#" class="nav-logo">RAT<span>bid</span></a>
+    <div class="nav-links">
+      <a href="/auth/signin" class="nav-button secondary">Sign In</a>
+      <a href="/auth/signup" class="nav-button primary">Sign Up</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <div class="container home-container">
+    <div class="content-right">
+      <h1 class="title">RATbid</h1>
+      <div class="info">
+        <p>Build For Battle</p>
+        <p>RATbid is an integrated operational data management system <br>
+            designed to help users organize information, track tasks, <br>
+            and collaborate seamlessly in one unified platform.</p>
+      </div>
+      <div class="pixel-bg"></div>
+    </div>
+  </div>
+  <script>
+    // Create grid based on viewport size
+    const bg = document.querySelector('.pixel-bg');
+    const cellSize = 30;   // Block size (px)
+    const gapSize  = 1;    // Gap between blocks (px)
+    const cols = Math.ceil((window.innerWidth * 0.5) / (cellSize + gapSize));
+    const rows = Math.ceil(window.innerHeight / (cellSize + gapSize));
+    bg.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    bg.style.gridAutoRows        = `${cellSize}px`;
+
+    // Add animation CSS
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      @keyframes fadeInOut {
+        0% { opacity: 0.2; }
+        50% { opacity: 1; }
+        100% { opacity: 0.2; }
+      }
+      
+      @keyframes pulseSize {
+        0% { transform: scale(0.95); }
+        50% { transform: scale(1); }
+        100% { transform: scale(0.95); }
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    for (let i = 0; i < rows * cols; i++) {
+      const pixel = document.createElement('div');
+      const r = Math.random();
+      
+      // Set color
+      if (r > 0.92) {
+        pixel.style.backgroundColor = '#53bdff';      // Light blue
+      } else if (r > 0.8) {
+        pixel.style.backgroundColor = '#1da1f2';      // Medium blue
+      } else if (r > 0.7) {
+        pixel.style.backgroundColor = '#135279';      // Dark blue
+      }
+      
+      // Add animation for colored pixels
+      if (r > 0.7) {
+        // Random animation duration between 3-7 seconds
+        const duration = 3 + Math.random() * 4;
+        // Random delay so they don't all animate together
+        const delay = Math.random() * 2;
+        
+        pixel.style.animation = `fadeInOut ${duration}s infinite, pulseSize ${duration}s infinite`;
+        pixel.style.animationDelay = `${delay}s`;
+        pixel.style.transition = 'all 0.3s ease';
+      }
+      
+      bg.appendChild(pixel);
+    }
+    
+    // Add hover effect for additional interactivity
+    bg.addEventListener('mousemove', (e) => {
+      const pixels = bg.querySelectorAll('div');
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      
+      pixels.forEach((pixel) => {
+        const rect = pixel.getBoundingClientRect();
+        const pixelX = rect.left + rect.width / 2;
+        const pixelY = rect.top + rect.height / 2;
+        
+        // Calculate distance from mouse to pixel center
+        const distance = Math.sqrt(
+          Math.pow(mouseX - pixelX, 2) + 
+          Math.pow(mouseY - pixelY, 2)
+        );
+        
+        // Pixels close to the mouse get highlighted
+        if (distance < 100 && pixel.style.backgroundColor) {
+          pixel.style.opacity = '1';
+          pixel.style.transform = 'scale(1.1)';
+        } else {
+          pixel.style.opacity = '';
+          pixel.style.transform = '';
+        }
+      });
+    });
+    
+    // Language change functionality
+    function changeLanguage(lang) {
+      console.log('Language changed to: ' + lang);
+      // Add your translation implementation here
+    }
+  </script>
+</body>
+</html>

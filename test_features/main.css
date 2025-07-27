@@ -1,0 +1,235 @@
+/* Reset & base */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #02242c;
+  font-family: 'Arial', sans-serif;
+  color: white;
+  overflow-x: hidden;
+}
+
+/* Navigation bar */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 20px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  background-color: rgba(2, 36, 44, 0.7);
+}
+
+.nav-logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  position: relative;
+}
+
+.nav-logo span {
+  color: #1da1f2;
+}
+
+.nav-logo::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: -12px;
+  width: 8px;
+  height: 8px;
+  background: #1da1f2;
+  border-radius: 2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.nav-button {
+  padding: 8px 20px;
+  border: 2px solid #1da1f2;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.nav-button.primary {
+  background-color: #1da1f2;
+}
+
+.nav-button.primary:hover {
+  background-color: #0c85d0;
+  border-color: #0c85d0;
+}
+
+.nav-button.secondary {
+  background-color: transparent;
+}
+
+.nav-button.secondary:hover {
+  background-color: rgba(29, 161, 242, 0.1);
+}
+
+/* กล่องหลักจัดกึ่งกลาง */
+.container {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  z-index: 1;
+  padding-left: 200px; /* เพิ่มระยะห่างจากขอบซ้าย */
+}
+
+.home-container {
+  height: 100vh;
+}
+
+/* ชื่อ RATbid */
+.title {
+  font-size: 68px;
+  margin: 20px 0;
+  letter-spacing: 1.5px;
+}
+
+/* ข้อมูลใต้ชื่อ */
+.info p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 2px 0;
+}
+
+
+/* พื้นหลังพิกเซลทางขวา */
+.pixel-bg {
+  position: absolute;
+  top: 0; right: 0;
+  height: 100vh;
+  width: 50vw;
+  display: grid;
+  gap: 2px;
+  opacity: 0.5;
+  z-index: 0;
+}
+.pixel-bg > div {
+  width: 100%; height: 100%;
+}
+
+/* Images gallery */
+.gallery-section {
+  padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.gallery-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-areas:
+    "img1 img2 img3"
+    "img4 img5 img6";
+  gap: 20px;
+  transform: rotate(-2deg) scale(0.95);
+}
+
+.gallery-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  transition: all 0.4s ease;
+}
+
+.gallery-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.gallery-image:hover {
+  transform: scale(1.05) rotate(2deg);
+  z-index: 2;
+}
+
+.gallery-image:hover img {
+  transform: scale(1.1);
+}
+
+.image-1 {
+  grid-area: img1;
+  transform: translateY(20px) rotate(3deg);
+}
+
+.image-2 {
+  grid-area: img2;
+  transform: translateY(-15px) rotate(-2deg);
+}
+
+.image-3 {
+  grid-area: img3;
+  transform: translateY(10px) rotate(1deg);
+}
+
+.image-4 {
+  grid-area: img4;
+  transform: translateY(-5px) rotate(-1deg);
+}
+
+.image-5 {
+  grid-area: img5;
+  transform: translateY(15px) rotate(2deg);
+}
+
+.image-6 {
+  grid-area: img6;
+  transform: translateY(-10px) rotate(-3deg);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 15px 20px;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .image-grid {
+    grid-template-areas:
+      "img1 img2"
+      "img3 img4"
+      "img5 img6";
+  }
+}
+
+@media (max-width: 480px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .image-grid {
+    grid-template-areas:
+      "img1"
+      "img2"
+      "img3"
+      "img4"
+      "img5"
+      "img6";
+  }
+}
