@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import Head from 'next/head'; 
-import '../style/home.css'; // Assuming you have a CSS file for styles
+import '../styles/home.css'; // Assuming you have a CSS file for styles
 
 const VisualBoard = () => {
   const boardElementsRef = useRef(null);
