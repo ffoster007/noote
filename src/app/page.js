@@ -346,7 +346,7 @@ const VisualBoard = () => {
                 </div>
                 <div className="contact-label">Join Discord</div>
               </a>
-              <a href="#" className="contact-link" onClick={() => alert('Add your GitHub repository link here')}>
+              <a href="https://github.com/ffoster007/noote" className="contact-link">
                 <div className="contact-icon">
                   <i className="fab fa-github"></i>
                 </div>
